@@ -1,0 +1,234 @@
+\documentclass{beamer}
+
+\usetheme{metropolis}
+
+\title{Zero-Knowledge Proof: Halo 2 for Dummies}
+\date{Date: TBD}
+
+\newcommand{\wireindices}{\mathcal{I}}
+
+\AtBeginSection[]{
+	\begin{frame}
+		\vfill
+		\centering
+		\begin{beamercolorbox}[sep=8pt,center,shadow=false,rounded=true]{title}
+			\usebeamerfont{title}\insertsectionhead\par%
+		\end{beamercolorbox}
+		\vfill
+	\end{frame}
+}
+
+\begin{document}
+	\begin{frame}
+		\titlepage
+	\end{frame}
+	
+	\begin{frame}{Outline}
+		\tableofcontents
+	\end{frame}
+
+	\section{Circuit Specification}
+	\begin{frame}{Problem statement}
+		Construct a zkSNARK for satisfaction of 
+		\begin{equation*}
+			\mathcal{C}(\mathbf{x}) = \mathbf{y}
+		\end{equation*}
+		where $\mathbf{x}$ is private while $\mathcal{C}$ and $\mathbf{y}$ are public.
+		
+		This talk: PlonK's arithmetization \cite{iacr/GabizonWC19} and Halo 2's Plonkish, 
+		
+		i.e., transforming $\mathcal{C}$ to constraints constructible in Halo 2.
+	\end{frame}
+
+	\begin{frame}{Circuit Specification}
+		Let $\mathcal{C}$ be a circuit of $n$ gates, including:
+		\begin{itemize}
+			\item Additions,
+			\item Multiplications,
+			\item Additions with constants, and 
+			\item Multiplications with constants.
+		\end{itemize}
+		Computations are in some finite field $\mathbb{F}$.
+		
+		Intuition about $\mathbb{F}$:
+		\begin{itemize}
+			\item Can compute additions, subtractions, multiplications.
+			\item Can compute divisions w.r.t non-zero divisions.
+			\item Examples: $\mathbb{Z}_3 = \{0, 1, 2\}$, $\mathbb{Z}_7 = \{0, 1, 2, 3, 4, 5, 6\}$.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Example}
+		Computing $f(u, v) = u^2 + 3uv + v + 5$ in finite field $\mathbb{F}$. 
+		
+		 Circuit specification:
+		 \begin{equation*}
+		 	\begin{cases}
+		 		z_1 = u \cdot u,&\text{(multiplication)}\\
+		 		z_2 = u \cdot v,&\text{(multiplication)}\\
+		 		z_3 = z_2 \cdot 3,&\text{(multiplication with constant)}\\
+		 		z_4 = z_1 + z_3,&\text{(addition)}\\
+		 		z_5 = z_4 + v,&\text{(addition)}\\
+		 		z_6 = z_5 + 5.&\text{(addition with constant)}
+		 	\end{cases}
+		 \end{equation*}
+	\end{frame}
+
+	\section{Wire Labeling with Selectors}
+	\begin{frame}{Labeling circuit wires with selectors}
+		Let $x : \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\} \rightarrow \mathbb{F}$.
+		
+		Intuition: view $x$ as an array whose indices are $a_1, \dots, c_n$.
+		
+		For each gate $i \in [n]$, represent with the form
+		\begin{equation*}
+			(q_L)_i \cdot x_{a_i} + (q_R)_i \cdot x_{b_i} + (q_O)_i \cdot x_{c_i} + (q_M)_i \cdot (x_{a_i} \cdot x_{b_i}) + (q_C)_i = 0.
+		\end{equation*}
+		
+		$(q_L)_i, (q_R)_i, (q_O)_i, (q_M)_i, (q_C)_i$: selectors determined by the gate.
+		
+		In particular,
+		\begin{itemize}
+			\item Addition: $(q_L)_i = 1, (q_R)_i = 1, (q_O)_i = -1, (q_M)_i = 0, (q_C)_i = 0$.
+			\item Multiplication: $(q_L)_i = 0, (q_R)_i = 0, (q_O)_i = -1, (q_M)_i = 1, (q_C)_i = 0$.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Example}
+		Label wires of each gate separately as follows:
+		\begin{equation*}
+			\begin{cases}
+				z_1 = u \cdot u,\\
+				z_2 = u \cdot v,\\
+				z_3 = z_2 \cdot 3,\\
+				z_4 = z_1 + z_3,\\
+				z_5 = z_4 + v,\\
+				z_6 = z_5 + 5.
+			\end{cases}
+			\Rightarrow
+			\begin{cases}
+				x_{c_1} = x_{a_1} \cdot x_{b_1},\\
+				x_{c_2} = x_{a_2} \cdot x_{b_2},\\
+				x_{c_3} = x_{a_3} \cdot 3,\\
+				x_{c_4} = x_{a_4} + x_{b_4},\\
+				x_{c_5} = x_{a_5} + x_{b_5},\\
+				x_{c_6} = x_{a_6} + 5.
+			\end{cases}
+		\end{equation*}
+	
+		Putting selectors:
+		\begin{equation*}
+			\begin{cases}
+				0 \cdot x_{a_1} + 0 \cdot x_{b_1} + (-1) \cdot x_{c_1} + 1 \cdot (x_{a_1}\cdot x_{b_1}) + 0 = 0,\\
+				\qquad\qquad\qquad\qquad\qquad\vdots \\
+				1 \cdot x_{a_6} + 0 \cdot x_{b_6} + (-1) \cdot x_{c_6} + 0 \cdot (x_{a_6}\cdot x_{b_6}) + 5 = 0.
+			\end{cases}
+		\end{equation*}
+	\end{frame}
+	\section{Copy Constraints}
+	\begin{frame}{Copy constraints}
+		\begin{equation*}
+			\begin{cases}
+				z_1 = u \cdot u,\\
+				z_2 = u \cdot v,\\
+				z_3 = z_2 \cdot 3,\\
+				z_4 = z_1 + z_3,\\
+				z_5 = z_4 + v,\\
+				z_6 = z_5 + 5.
+			\end{cases}\Rightarrow
+			\begin{cases}
+				x_{c_1} = x_{a_1} \cdot x_{b_1},\\
+				x_{c_2} = x_{a_2} \cdot x_{b_2},\\
+				x_{c_3} = x_{a_3} \cdot 3,\\
+				x_{c_4} = x_{a_4} + x_{b_4},\\
+				x_{c_5} = x_{a_5} + x_{b_5},\\
+				x_{c_6} = x_{a_6} + 5.
+			\end{cases}
+		\end{equation*}
+	
+		Additional requirements (copy constraints):
+		\begin{itemize}
+			\item $x = x_{a_1} = x_{b_1} = x_{a_2}$,\\
+			\item $z_1 = x_{c_1} = x_{a_4}$,\\
+			\item \dots
+		\end{itemize}
+		$\Rightarrow$ checking using permutation argument.
+	\end{frame}
+	\begin{frame}{Checking copy constraints}
+		Let $\{i_1, \dots, i_k\} \subseteq \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\}$ s.t 
+		\begin{equation*}
+			\begin{cases}
+				i_1 < i_2 < \dots < i_k \\
+				x_{i_1} = x_{i_2} = \dots = x_{i_k}
+			\end{cases}
+		\end{equation*}
+		
+		Observation: 
+		\begin{equation*}
+			\mathbf{a} = \left((i_1, x_{i_1}), \dots, (i_k, x_{i_k})\right) 
+		\end{equation*}
+		is a permutation of 
+		\begin{equation*}
+			\mathbf{b} = \left((i_k, x_{i_1}), (i_1, x_{i_2}), \dots, (i_{k - 1}, x_{i_k})\right) 
+		\end{equation*}
+		if and only if 
+		\begin{equation*}
+			x_{i_1} = x_{i_2} = \dots = x_{i_k}
+		\end{equation*}
+	
+		``$\Leftarrow$'' direction is trivial.
+	\end{frame}
+	\begin{frame}{Proof of ``$\Rightarrow$''}
+		Assume that 
+			\begin{equation*}
+			\mathbf{a} = \left((i_1, x_{i_1}), \dots, (i_k, x_{i_k})\right)
+		\end{equation*}
+		is a permutation of 
+		\begin{equation*}
+			\mathbf{b} = \left((i_k, x_{i_1}), (i_1, x_{i_2}), \dots, (i_{k - 1}, x_{i_k})\right).
+		\end{equation*}
+	
+		Since $i_1, \dots, i_k$ are distinct, we have
+		\begin{equation*}
+			(i_j, x_{i_j}) = (i_j, x_{i_{(j \mod k + 1)}})
+		\end{equation*}
+		where LHS and RHS are from $\mathbf{a}$ and $\mathbf{b}$, respectively.
+		
+		Hence $x_{i_1} = \dots = x_{i_{(j \mod k + 1)}}$.
+	\end{frame}
+
+	\section{Arithmetization}
+	\begin{frame}{Arithmetization}
+		\begin{itemize}
+			\item Relabel with selectors. Prove correct evaluation with selectors.
+			\item Let $\wireindices = \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\}$. 
+			
+			Deterministically determine a permutation $\sigma : \wireindices \to \wireindices$. 
+			
+			Prove that
+			\begin{equation*}
+				\left((a_1, x_{a_1}), \dots, (c_n, x_{c_n})\right)
+			\end{equation*}
+			is a permutation of 
+			\begin{equation*}
+				\left((\sigma(a_1), x_{a_1}), \dots, (\sigma(c_n), x_{c_n})\right).
+			\end{equation*}
+		\end{itemize}
+	\end{frame}
+
+	\section{Plonkish}
+
+	\begin{frame}{}
+		\begin{center}
+			{\fontsize{20}{20}\selectfont Thank You!}
+		\end{center}
+	\end{frame}
+
+	\begin{frame}[allowframebreaks]{References}
+		\setbeamertemplate{bibliography item}[text]
+		\bibliographystyle{alpha}
+		\bibliography{refs.bib}
+		
+	\end{frame}
+	
+\end{document}

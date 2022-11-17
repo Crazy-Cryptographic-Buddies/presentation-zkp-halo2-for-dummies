@@ -26,6 +26,7 @@
 	\begin{frame}{Outline}
 		\tableofcontents
 	\end{frame}
+	\section{Why zkSNARK with fast verification?}
 
 	\section{Circuit Specification}
 	\begin{frame}{Problem statement}
@@ -35,7 +36,11 @@
 		\end{equation*}
 		where $\mathbf{x}$ is private while $\mathcal{C}$ and $\mathbf{y}$ are public.
 		
-		This talk: PlonK's arithmetization \cite{iacr/GabizonWC19} and Halo 2's Plonkish, 
+		This talk: 
+		\begin{itemize}
+			\item PlonK's arithmetization \cite{iacr/GabizonWC19} and 
+			\item Halo 2's PLONKish \footnote{\url{https://zcash.github.io/halo2/concepts/arithmetization.html}}, 
+		\end{itemize}
 		
 		i.e., transforming $\mathcal{C}$ to constraints constructible in Halo 2.
 	\end{frame}
@@ -74,7 +79,7 @@
 		 \end{equation*}
 	\end{frame}
 
-	\section{Wire Labeling with Selectors}
+	\section{PlonK's Arithmetization}
 	\begin{frame}{Labeling circuit wires with selectors}
 		Let $x : \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\} \rightarrow \mathbb{F}$.
 		
@@ -125,7 +130,7 @@
 			\end{cases}
 		\end{equation*}
 	\end{frame}
-	\section{Copy Constraints}
+
 	\begin{frame}{Copy constraints}
 		\begin{equation*}
 			\begin{cases}
@@ -197,8 +202,7 @@
 		Hence $x_{i_1} = \dots = x_{i_{(j \mod k + 1)}}$.
 	\end{frame}
 
-	\section{Arithmetization}
-	\begin{frame}{Arithmetization}
+	\begin{frame}{Final PlonK's Arithmetization}
 		\begin{itemize}
 			\item Relabel with selectors. Prove correct evaluation with selectors.
 			\item Let $\wireindices = \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\}$. 
@@ -215,8 +219,44 @@
 			\end{equation*}
 		\end{itemize}
 	\end{frame}
+	\begin{frame}{Example}
+		$$\begin{cases}
+				u = x_{a_1} = x_{a_2} = x_{b_1},\\
+				v = x_{b_2} = x_{b_5},\\
+				z_1 = x_{a_4} = x_{c_1},\\
+				z_2 = x_{a_3} = x_{c_2},\\
+				z_3 = x_{b_4} = x_{c_3},\\
+				z_4 = x_{a_5} = x_{c_4},\\
+				z_5 = x_{a_6} = x_{c_5},\\
+				z_6 = x_{c_6}.
+			\end{cases} \Rightarrow \begin{cases}
+				\sigma(a_1) = b_1,\quad \sigma(a_2) = a_1, \quad\sigma(b_1) = a_2,\\
+				\sigma(b_2) = b_5, \quad \sigma(b_5) = b_2,\\
+				\sigma(a_4) = c_1, \quad\sigma(c_1) = a_4,\\
+				\sigma(a_3) = c_2, \quad\sigma(c_2) = a_3,\\
+				\sigma(b_4) = c_3, \quad\sigma(c_3) = b_4,\\
+				\sigma(a_5) = c_4, \quad\sigma(c_4) = a_5,\\
+				\sigma(a_6) = c_5, \quad\sigma(c_5) = a_6,\\
+				\sigma(c_6) = c_6.
+			\end{cases}$$
+	\end{frame}
 
-	\section{Plonkish}
+	\section{PLONKish Arithmetization}
+	\begin{frame}{Overview of PLONKish Arithmetization}
+		Support custom gates.
+	\end{frame}
+
+	\begin{frame}{Table's Organization}
+		content...
+	\end{frame}
+
+	\section{An Example Implementation from Halo 2}
+	\begin{frame}{Example Circuit}
+		content...
+	\end{frame}
+	\begin{frame}{Specifying Columns}
+		content...
+	\end{frame}
 
 	\begin{frame}{}
 		\begin{center}

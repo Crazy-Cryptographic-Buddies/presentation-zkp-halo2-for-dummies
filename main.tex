@@ -35,33 +35,24 @@
 		\tableofcontents
 	\end{frame}
 	\section{zkSNARK}
-	\begin{frame}{Zero-Knowledge Proofs}
+	\begin{frame}{Zero-Knowledge Proofs / Arguments}
 		A $2$-party interactive game between a prover $\prover$ and a verifier $\verifier$ for a claimed statement $\mathbf{s}$ from $\prover$ that 
 		\begin{itemize}
-			\item \textbf{Completeness.} If $\mathbf{s}$ is true, then $\verifier$ always trusts the statement. 
-			\item \textbf{Soundness.} If $\mathbf{s}$ is not true, then $\verifier$ will reject with high probability. 
+			\item \textbf{Completeness.} If $\mathbf{s}$ is true, then $\verifier$ always trusts $\prover$. 
+			\item \textbf{Soundness.} $\verifier$ cannot cheat with false statement $\mathsf{s}$.
 			\item \textbf{Zero knowledge.} $\verifier$ cannot extract any information beyond validity of $\mathbf{s}$. 
 		\end{itemize}
 	\end{frame}
 	
-	\begin{frame}{Zero-Knowledge Arguments}
-		Related notions: zero-knowledge arguments (ZKAs) and zero-knowledge argument of knowledge (ZKAoKs).
-		\begin{itemize}
-			\item \textbf{Zero-knowledge argument.} Same as ZKP, yet prover is restricted to be polynomial time machines.
-			\item \textbf{Argument of knowledge.} There exists an extractor that extracts a valid witness.
-		\end{itemize}
-	\end{frame}
-	
 	\begin{frame}{Succint non-interactive argument of knowledge (SNARKs)}
-		By \cite{eurocrypt/GennaroGP013},
 		
-		\textbf{Succintness.} proof size $= \poly(\kappa)\polylog(|\mathbf{u}| + |\mathbf{w}|)$ where 
+		\textbf{Succintness.} small proof size.
 		\begin{itemize}
-			\item $\kappa$ is security parameter, 
-			\item $\mathbf{u}$ and $\mathbf{w}$ are public and private inputs, respectively. 
+			\item SNARK: succint non-interactive argument of knowledge.
+			\item zkSNARK: zero-knowledge SNARK.
 		\end{itemize}
 		
-		\textbf{Fast Verification.} $\verifier$'s running time is $\poly(\kappa)\polylog(|\mathbf{u}| + |\mathbf{w}|)$.
+		\textbf{Fast Verification.} small verification time.
 		
 		\textbf{Constructions.} R1CS \cite{eurocrypt/Groth16}, STARK \cite{iacr/Ben-SassonBHR18}, PLONK \cite{iacr/GabizonWC19}, HyperPlonk \cite{iacr/ChenBBZ22}, \dots
 	\end{frame}

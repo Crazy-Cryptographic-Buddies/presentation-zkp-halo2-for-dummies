@@ -4,9 +4,13 @@
 
 \usepackage{sansmath}
 \usepackage{listings}
+\usepackage{comment}
+\usepackage{tikz}
+\usetikzlibrary{arrows, positioning, calc}
 
 \title{Zero-Knowledge Proof: Halo 2 for Dummies}
-\date{Date: TBD}
+\date{26 November 2022}
+\author{Khai Hanh Tang\\ Orochi Network}
 
 \newcommand{\prover}{\mathcal{P}}
 \newcommand{\verifier}{\mathcal{V}}
@@ -34,44 +38,211 @@
 	\begin{frame}{Outline}
 		\tableofcontents
 	\end{frame}
-	\section{zkSNARK}
+	\section{PLONKish Arithmetization}
 	\begin{frame}{Zero-Knowledge Proofs / Arguments}
-		A $2$-party interactive game between a prover $\prover$ and a verifier $\verifier$ for a claimed statement $\mathbf{s}$ from $\prover$ that 
+		Proving a statement is true without leaking secret behind.\pause
+		
+		Properties:\pause
 		\begin{itemize}
-			\item \textbf{Completeness.} If $\mathbf{s}$ is true, then $\verifier$ always trusts $\prover$. 
-			\item \textbf{Soundness.} $\verifier$ cannot cheat with false statement $\mathsf{s}$.
-			\item \textbf{Zero knowledge.} $\verifier$ cannot extract any information beyond validity of $\mathbf{s}$. 
+			\item Completeness\pause
+			\item Soundness\pause
+			\item Zero Knowledge\pause
 		\end{itemize}
-	\end{frame}
 	
-	\begin{frame}{Succint non-interactive argument of knowledge (SNARKs)}
-		
-		\textbf{Succintness.} small proof size.
+		zkSNARK: very small proof size.\pause
 		\begin{itemize}
-			\item SNARK: succint non-interactive argument of knowledge.
-			\item zkSNARK: zero-knowledge SNARK.
+			\item Some proofs / arguments have fast verification.
 		\end{itemize}
-		
-		\textbf{Fast Verification.} small verification time.
-		
-		\textbf{Constructions.} R1CS \cite{eurocrypt/Groth16}, STARK \cite{iacr/Ben-SassonBHR18}, PLONK \cite{iacr/GabizonWC19}, HyperPlonk \cite{iacr/ChenBBZ22}, \dots
 	\end{frame}
 
+	\begin{frame}{Halo 2}
+			zkSNARK library in Rust.\pause
+			\begin{figure}
+				\begin{tikzpicture}[node distance=0.5cm, auto]
+					\node [rectangle, draw] (1) {$u^2 + 3uv + v + 5$};
+					\node [rectangle, draw, left=of 1] (2) {$u^2 + 3uv + v$};
+					\node [rectangle, draw, left = of 2](3){$u^2 + 3uv$};
+					\node [rectangle, draw, left = of 3](4){$u^2$};
+					\node [rectangle, draw, below = of 3] (5){$3uv$};
+					\node [rectangle, draw, left = of 5](6){$uv$};
+					\node [rectangle, draw, left = of 4](7){$u$};
+					\node [rectangle, draw, below = of 7](8){$v$};
+					
+					\path[->,draw,thick] 
+						(8) edge node[near end]{} (6)
+						(7) edge node[near end]{} (6)
+						(7) edge node[near end]{} (4)
+						(6) edge node[near end]{} (5)
+						(5) edge node[near end]{} (3)
+						(4) edge node[near end]{} (3)
+						(3) edge node[near end]{} (2)
+						(8) edge [bend right = 40] node[near end]{} (2)
+						(2) edge node[near end]{} (1);
+				\end{tikzpicture}
+			\end{figure}\pause
+			PLONKish arithmetization \footnote{\url{https://zcash.github.io/halo2/concepts/arithmetization.html}}\pause
+			\begin{itemize}
+				\item built upon PLONK's arithmetization \cite{iacr/GabizonWC19}.\pause
+			\end{itemize} 
+			
+			Compiling arithmetization $\Rightarrow$ zkSNARK.
+	\end{frame}
+
+	\begin{frame}{Arithmetization Table for $f(u, v) = u^2 + 3uv + v + 5$ in Halo 2}
+		\footnotesize
+		\begin{figure}
+			\begin{tikzpicture}[node distance=0.5cm, auto]
+				\node [rectangle, draw] (1) {$u^2 + 3uv + v + 5$};
+				\node [rectangle, draw, left=of 1] (2) {$u^2 + 3uv + v$};
+				\node [rectangle, draw, left = of 2](3){$u^2 + 3uv$};
+				\node [rectangle, draw, left = of 3](4){$u^2$};
+				\node [rectangle, draw, below = of 3] (5){$3uv$};
+				\node [rectangle, draw, left = of 5](6){$uv$};
+				\node [rectangle, draw, left = of 4](7){$u$};
+				\node [rectangle, draw, below = of 7](8){$v$};
+				
+				\path[->,draw,thick] 
+				(8) edge node[near end]{} (6)
+				(7) edge node[near end]{} (6)
+				(7) edge node[near end]{} (4)
+				(6) edge node[near end]{} (5)
+				(5) edge node[near end]{} (3)
+				(4) edge node[near end]{} (3)
+				(3) edge node[near end]{} (2)
+				(8) edge [bend right = 40] node[near end]{} (2)
+				(2) edge node[near end]{} (1);
+			\end{tikzpicture}
+		\end{figure}\pause
+		\begin{columns}
+			\begin{column}{0.5\textwidth}
+				\begin{center}
+					\begin{table}
+						\scriptsize
+						\setlength\tabcolsep{1.5pt}
+						\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+							\hline
+							$\text{adv}_0$&$\text{adv}_1$&$\text{adv}_2$&$\text{const}$&$\text{s}_\text{add}$&$\text{s}_\text{mul}$&$\text{s}_\text{addc}$&$\text{s}_\text{mulc}$\\
+							\hline
+							$x_{a_1}$&$x_{b_1}$&$x_{c_1}$& & $0$ & $1$ & $0$ & $0$ \\
+							$x_{a_2}$&$x_{b_2}$&$x_{c_2}$& & $0$ & $1$ & $0$ & $0$\\
+							$x_{a_3}$&&$x_{c_3}$& $3$ & $0$ & $0$ & $0$ & $1$ \\
+							$x_{a_4}$&$x_{b_4}$&$x_{c_4}$& & $1$ & $0$ & $0$ & $0$ \\
+							$x_{a_5}$&$x_{b_5}$&$x_{c_5}$& & $1$ & $0$ & $0$ & $0$\\
+							$x_{a_6}$&&$x_{c_6}$& $5$ & $0$ & $0$ & $1$ & $0$\\
+							\hline
+						\end{tabular}
+					\end{table}\pause
+				\end{center}
+			\end{column}
+			\begin{column}{0.4\textwidth}
+					\begin{equation*}
+					\begin{cases}
+						s_{add} \cdot (\text{adv}_0 + \text{adv}_1 - \text{adv}_2) = 0,\\ 
+						s_{mul} \cdot (\text{adv}_0 \cdot \text{adv}_1 - \text{adv}_2) = 0,\\
+						s_{addc} \cdot (\text{adv}_0 + \text{const} - \text{adv}_2) = 0,\\ 
+						s_{mulc} \cdot (\text{adv}_0 \cdot \text{const} - \text{adv}_2) = 0,\\ 
+					\end{cases}
+				\end{equation*}
+			\end{column}
+		\end{columns}\pause
+		
+		Copy constraints:
+		\begin{tabular}{cccc}
+			$u = x_{a_1} = x_{a_2} = x_{b_1}$ & $v = x_{b_2} = x_{b_5}$ &$x_{a_4} = x_{c_1}$ & $x_{a_3} = x_{c_2}$\\ 
+			$x_{b_4} = x_{c_3}$ & $x_{a_5} = x_{c_4}$ & $x_{a_6} = x_{c_5}$ & $x_{c_6} = f(u,v)$
+		\end{tabular}\pause
+		
+		$f(u, v)$ belongs to instance column.
+	\end{frame}
+	\section{Implementation in Rust}
+	\begin{frame}{Arithmetization Table for $f(u, v) = u^2 + 3uv + v + 5$ in Halo 2}
+		\footnotesize
+		\begin{figure}
+			\begin{tikzpicture}[node distance=0.5cm, auto]
+				\node [rectangle, draw] (1) {$u^2 + 3uv + v + 5$};
+				\node [rectangle, draw, left=of 1] (2) {$u^2 + 3uv + v$};
+				\node [rectangle, draw, left = of 2](3){$u^2 + 3uv$};
+				\node [rectangle, draw, left = of 3](4){$u^2$};
+				\node [rectangle, draw, below = of 3] (5){$3uv$};
+				\node [rectangle, draw, left = of 5](6){$uv$};
+				\node [rectangle, draw, left = of 4](7){$u$};
+				\node [rectangle, draw, below = of 7](8){$v$};
+				
+				\path[->,draw,thick] 
+				(8) edge node[near end]{} (6)
+				(7) edge node[near end]{} (6)
+				(7) edge node[near end]{} (4)
+				(6) edge node[near end]{} (5)
+				(5) edge node[near end]{} (3)
+				(4) edge node[near end]{} (3)
+				(3) edge node[near end]{} (2)
+				(8) edge [bend right = 40] node[near end]{} (2)
+				(2) edge node[near end]{} (1);
+			\end{tikzpicture}
+		\end{figure}
+		\begin{columns}
+			\begin{column}{0.5\textwidth}
+				\begin{center}
+					\begin{table}
+						\scriptsize
+						\setlength\tabcolsep{1.5pt}
+						\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+							\hline
+							region&$\text{a}_0$&$\text{a}_1$&$\text{a}_2$&$\text{c}$&$\text{s}_\text{add}$&$\text{s}_\text{mul}$&$\text{s}_\text{addc}$&$\text{s}_\text{mulc}$\\
+							\hline
+							1&$x_{a_1}$&$x_{b_1}$&$x_{c_1}$& & $0$ & $1$ & $0$ & $0$ \\
+							&$x_{a_2}$&$x_{b_2}$&$x_{c_2}$& & $0$ & $1$ & $0$ & $0$\\
+							&$x_{a_3}$&&$x_{c_3}$& $3$ & $0$ & $0$ & $0$ & $1$ \\
+							\hline
+							2&$x_{a_4}$&$x_{b_4}$&$x_{c_4}$& & $1$ & $0$ & $0$ & $0$ \\
+							&$x_{a_5}$&$x_{b_5}$&$x_{c_5}$& & $1$ & $0$ & $0$ & $0$\\
+							&$x_{a_6}$&&$x_{c_6}$& $5$ & $0$ & $0$ & $1$ & $0$\\
+							\hline
+						\end{tabular}
+					\end{table}
+				\end{center}
+			\end{column}
+			\begin{column}{0.4\textwidth}
+				\begin{equation*}
+					\begin{cases}
+						s_{add} \cdot (\text{adv}_0 + \text{adv}_1 - \text{adv}_2) = 0,\\ 
+						s_{mul} \cdot (\text{adv}_0 \cdot \text{adv}_1 - \text{adv}_2) = 0,\\
+						s_{addc} \cdot (\text{adv}_0 + \text{const} - \text{adv}_2) = 0,\\ 
+						s_{mulc} \cdot (\text{adv}_0 \cdot \text{const} - \text{adv}_2) = 0,\\ 
+					\end{cases}
+				\end{equation*}
+			\end{column}
+		\end{columns}
+		
+		Copy constraints:
+		\begin{tabular}{cccc}
+			$u = x_{a_1} = x_{a_2} = x_{b_1}$ & $v = x_{b_2} = x_{b_5}$ &$x_{a_4} = x_{c_1}$ & $x_{a_3} = x_{c_2}$\\ 
+			$x_{b_4} = x_{c_3}$ & $x_{a_5} = x_{c_4}$ & $x_{a_6} = x_{c_5}$ & $x_{c_6} = f(u,v)$
+		\end{tabular}
+		
+		$f(u, v)$ belongs to instance column.
+	\end{frame}
+	\begin{comment}
 	\section{Circuit Specification}
-	\begin{frame}{Problem statement}
+	\begin{frame}{Problem Statement}
+		Let $\mathcal{C}$ be a program computing a function, e.g., $$f(u, v) = u^2 + 3uv + v + 5.$$
 		Construct a zkSNARK for satisfaction of 
 		\begin{equation*}
 			\mathcal{C}(\mathbf{x}) = \mathbf{y}
 		\end{equation*}
 		where $\mathbf{x}$ is private while $\mathcal{C}$ and $\mathbf{y}$ are public.
+	\end{frame}
+
+	\begin{frame}{Overview of Arithmetization}
+		Arithmetization: transforming program to a form that can be compiled into zk proofs.
+		
+		Other intuition: representing such program in some language.
 		
 		This talk: 
 		\begin{itemize}
 			\item PLONK's arithmetization \cite{iacr/GabizonWC19} and 
-			\item Halo 2's PLONKish \footnote{\url{https://zcash.github.io/halo2/concepts/arithmetization.html}}, 
+			\item Halo 2's PLONKish \footnote{\url{https://zcash.github.io/halo2/concepts/arithmetization.html}}.
 		\end{itemize}
-		
-		i.e., transforming $\mathcal{C}$ to constraints constructible in Halo 2.
 	\end{frame}
 
 	\begin{frame}{Circuit Specification}
@@ -230,24 +401,13 @@
 		
 		Hence $x_{i_1} = \dots = x_{i_{(j \mod k + 1)}}$.
 	\end{frame}
-
 	\begin{frame}{Final PLONK's Arithmetization}
 		\begin{itemize}
 			\item Relabel with selectors. Prove correct evaluation with selectors.
-			\item Let $\wireindices = \{a_1, \dots, a_n, b_1, \dots, b_n, c_1, \dots, c_n\}$. 
-			
-			Deterministically determine a permutation $\sigma : \wireindices \to \wireindices$. 
-			
-			Prove that
-			\begin{equation*}
-				\left((a_1, x_{a_1}), \dots, (c_n, x_{c_n})\right)
-			\end{equation*}
-			is a permutation of 
-			\begin{equation*}
-				\left((\sigma(a_1), x_{a_1}), \dots, (\sigma(c_n), x_{c_n})\right).
-			\end{equation*}
+			\item Guaranteeing equality among wires (copy constraints).
 		\end{itemize}
 	\end{frame}
+	\begin{comment}
 	\begin{frame}{Example}
 		$$\begin{cases}
 				u = x_{a_1} = x_{a_2} = x_{b_1},\\
@@ -269,7 +429,6 @@
 				\sigma(c_6) = c_6.
 			\end{cases}$$
 	\end{frame}
-
 	\section{PLONKish Arithmetization}
 	\begin{frame}{Overview of PLONKish Arithmetization}
 		Support custom gates.
@@ -305,28 +464,8 @@
 
 
 	\section{An Example Implementation from Halo 2}
-	\begin{frame}{Example from $f(u, v) = u^2 + 3uv + v + 5$}
-		\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
-			\hline
-			region&$\text{a}_0$&$\text{a}_1$&$\text{a}_2$&$\text{c}$&$\text{s}_\text{add}$&$\text{s}_\text{mul}$&$\text{s}_\text{addc}$&$\text{s}_\text{mulc}$\\
-			\hline
-			1&$x_{a_1}$&$x_{b_1}$&$x_{c_1}$& & $0$ & $1$ & $0$ & $0$ \\
-			&$x_{a_2}$&$x_{b_2}$&$x_{c_2}$& & $0$ & $1$ & $0$ & $0$\\
-			&$x_{a_3}$&&$x_{c_3}$& $3$ & $0$ & $0$ & $0$ & $1$ \\
-			\hline
-			2&$x_{a_4}$&$x_{b_4}$&$x_{c_4}$& & $1$ & $0$ & $0$ & $0$ \\
-			&$x_{a_5}$&$x_{b_5}$&$x_{c_5}$& & $1$ & $0$ & $0$ & $0$\\
-			&$x_{a_6}$&&$x_{c_6}$& $5$ & $0$ & $0$ & $1$ & $0$\\
-			\hline
-		\end{tabular}
-		
-		\begin{tabular}{cccc}
-			$x_{a_1} = x_{a_2} = x_{b_1}$ & $x_{b_2} = x_{b_5}$ &$x_{a_4} = x_{c_1}$ & $x_{a_3} = x_{c_2}$\\ 
-			$x_{b_4} = x_{c_3}$ & $x_{a_5} = x_{c_4}$ & $x_{a_6} = x_{c_5}$ & $x_{c_6} = f(u,v)$
-		\end{tabular}
-		
-		$f(u, v)$ belongs to instance column.
-	\end{frame}
+	\end{comment}
+	
 
 	\begin{frame}{}
 		\begin{center}
